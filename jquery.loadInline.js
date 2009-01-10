@@ -1,25 +1,67 @@
 //
 //  jQuery.loadInline.js:  have links and forms load content inline via ajax
 //
+//
+//  Copyright (c) 2009, Ryan Kelly
+//  Available under the terms of the MIT licencse.
+//  http://www.opensource.org/licenses/mit-license.php
+//
+//
 //  This jQuery plugin causes links to display their contents within an
 //  element on the current page, using a simple AJAX request.  Similarly,
 //  it modifies forms to submit themselves via ajax and display the resulting
-//  content inline in the current page.
+//  content inline in the current page (using the fantastic jquery.form
+//  plugin for all the heavy lifting).
 //
-//  The real trick is that any links or forms within the returned content
-//  are automatically decorated to load their content inline as well.
-//  The overall effect is like a little mini browser window contained inline
-//  in the current page.
+//  The interesting part is that any links or forms within the returned content
+//  are automatically decorated to load their content into the same inline
+//  element. The overall effect is like a little mini browser window contained 
+//  inline in the current page.
+//
+//  Use it like so:
+//
+//     $("a.load-inline").loadInline();
+//
+//  An options object may be given as the only argument to loadInline(), to
+//  specify any of the following properties:
+//
+//      target:  selector for the inline element into which contents
+//               will be loaded.
+//  
+//      create:  function that will be called if no target is specified;
+//               it must find/create and the inline element to be used
+//               and then return it.
+//
+//      template:  HTML node that will be cloned by the default 'create'
+//                 function to produce the inline element.
+//
+//      success:  callback executed whenever content is successfully loaded
+//
+//      error:  callback executed whenever content loading gives an error
+//
+//      setState:  callback executed whenever the state of the inline element
+//                 changes.  The state name is given as the only argument,
+//                 and can be one of 'wait', 'success' or 'error'.
+//
+//      finish:  callback executed when content is successfully loaded but
+//               contains no further links or forms; basically indicates that
+//               no further navigation can be performed within the element.
+//
+//  The default behavior is to create a fresh <div> for each loadInline() 
+//  element and display it as a pop-up.  When no further navigation is
+//  possible, or when ESC is pressed, the pop-up is automatically closed.
 //
 
 (function($) {
 
+//  Main plugin entrypoint
+//
 $.fn.loadInline = function(options) {
     var opts = $.extend({},$.fn.loadInline.defaults,options);
     return this.each(function() {
         var $this = $(this);
         var inline = null;
-        //  Capture link click events and send them into the popup
+        //  Capture link click events and send them into the inline element
         $this.filter("a").click(function(evt) {
              evt.preventDefault();
              inline = new Inline(opts,$this,evt);
@@ -33,7 +75,8 @@ $.fn.loadInline = function(options) {
                         }
              })
         });
-        //  Capture form submissions and send them into the popup via ajax
+        //  Capture form submissions and send them into the inline element.
+        //  This leverages the awesome ajax form plugin.
         $this.filter("form").ajaxForm({
             beforeSubmit: function() {
                               inline = new Inline(opts,$this);
@@ -50,6 +93,8 @@ $.fn.loadInline = function(options) {
 
 };
 
+//  Great for simple debugging messages.
+//
 function debug() {
     if(window.console) {
         console.log(arguments);
@@ -63,7 +108,7 @@ function debug() {
 };
 
 //  Inline object constructor.
-//  This object manages basic state interactions for the loadInline instance.
+//  This class manages basic state interactions for loadInline
 //
 function Inline(opts,source,event) {
     if(opts.recursing) {
@@ -81,6 +126,8 @@ function Inline(opts,source,event) {
     this.setState("wait");
 }
 
+//  Conditionally pass on calls to setState()
+//
 Inline.prototype.setState = function(state) {
     if(this.opts.setState) {
         this.opts.setState(state);
@@ -90,12 +137,12 @@ Inline.prototype.setState = function(state) {
 //  Display an error in the inline object.
 //
 Inline.prototype.error = function(req,status,err) {
+    this.setState("error");
     if(status) {
         this.target.html(status);
     } else if(err) {
         this.target.html(err);
     }
-    this.setState("error");
     if(this.opts.error) {
         this.opts.error(req,status,err);
     }
@@ -115,57 +162,52 @@ Inline.prototype.success = function(data) {
     }
 }
 
-//  Default options.
+//  Default options for loadInline.
 //
 //  We create a fresh div and display it like a popup.
-//  When we run out of links, or when ESC is pressed, we close
-//  the popup.
-
-$.fn.loadInline.defaults = {
-    target: undefined,
-    success: undefined,
-    error: undefined,
-    create: function(source) {
-                var target = $(this.template).clone().appendTo("body");
-                var self = this;
-                this.onCloseEvent = function(evt) {
-                    if(evt.type == "keypress" && evt.keyCode == 27) {
-                        self.close();
-                    }
-                };
-                this.close = function() {
-                    target.fadeOut("normal",function() {
-                        target.remove();
-                    });
-                    $(document).unbind("keypress",this.onCloseEvent);
-                };
-                $(document).bind("keypress",this.onCloseEvent);
-                target.css("position","absolute");
-                var pos = source.position();
-                target.css("top",pos.top).css("left",pos.left);
-                target.fadeIn();
-                return target;
-            },
-    finish: function() {
-                var self = this;
-                setTimeout(function() {
-                    self.close();
-                },700);
-            },
-    setState: function(state) {
-                  this.target.removeClass("error");
-                  this.target.removeClass("wait");
-                  this.target.removeClass("success");
-                  this.target.addClass(state);
-              }
-};
-
-//  Create a default template for the popup on page load
+//  When we run out of links, or when ESC is pressed, we close the popup.
 //
-$(function() {
-  $.fn.loadInline.defaults.template = $(document.createElement("div"))
-  $.fn.loadInline.defaults.template.appendTo("body").hide();
-  $.fn.loadInline.defaults.template.addClass("load-inline-display");
-});
+$.fn.loadInline.defaults = {
+  target: undefined,
+  success: undefined,
+  error: undefined,
+  template: $("<div class='load-inline-display' style='display: none'></div>"),
+  create: function(source) {
+              var target = $(this.template).clone().appendTo("body");
+              var self = this;
+              //  Handler for close events
+              this.onCloseEvent = function(evt) {
+                  if(evt.type == "keypress" && evt.keyCode == 27) {
+                      self.close();
+                  }
+              };
+              $(document).bind("keypress",this.onCloseEvent);
+              //  Actual function to call when closing
+              this.close = function() {
+                  target.fadeOut("normal",function() {
+                      target.remove();
+                  });
+                  $(document).unbind("keypress",this.onCloseEvent);
+              };
+              //  Position the popup over the element that was activated
+              target.css("position","absolute");
+              var pos = source.position();
+              target.css("top",pos.top).css("left",pos.left);
+              target.fadeIn();
+              return target;
+          },
+  finish: function() {
+              var self = this;
+              setTimeout(function() {
+                  self.close();
+              },700);
+          },
+  setState: function(state) {
+                this.target.removeClass("error");
+                this.target.removeClass("wait");
+                this.target.removeClass("success");
+                this.target.addClass(state);
+            }
+};
 
 })(jQuery);
