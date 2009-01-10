@@ -1,0 +1,29 @@
+<html>
+<head>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.2.6/jquery.js"></script>
+<script type="text/javascript" src="http://jqueryjs.googlecode.com/svn/trunk/plugins/form/jquery.form.js"></script>
+<script type="text/javascript" src="../jquery.loadInline.js"></script>
+<script type="text/javascript">
+$(function() {
+  $("a").loadInline();
+});
+</script>
+<style type="text/css">
+.load-inline-display { 
+    background: blue;
+}
+.load-inline-display.error { 
+    background: red;
+}
+.load-inline-display.success { 
+    background: green;
+}
+.load-inline-display.wait { 
+    background: gray;
+}
+</style>
+</head>
+<body>
+<a href="page1.html">Test Load Inline</a>
+</body>
+</html>
