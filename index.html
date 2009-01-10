@@ -2,6 +2,57 @@
 <head>
 </head>
 <body>
-To try it out, go here: <a href="./test/index.html">loadInline demo</a>.
+
+<h1>jquery.loadInline</h1>
+
+<p>This jQuery plugin causes links to display their contents within an
+element on the current page, using a simple AJAX request.  Similarly,
+it modifies forms to submit themselves via ajax and display the resulting
+content inline in the current page (using the fantastic jquery.form
+plugin for all the heavy lifting).</p>
+
+<p>The interesting part is that any links or forms within the returned content
+are automatically decorated to load their content into the same inline
+element. The overall effect is like a little mini browser window contained 
+inline in the current page.</p>
+
+<p>To try it out, go here: <a href="./test/index.html">loadInline demo</a>.</p>
+
+<p>Use it like so:</p>
+
+<code>
+    $("a.load-inline").loadInline();
+</code>
+
+<p>An options object may be given as the only argument to loadInline(), to
+specify any of the following properties:</p>
+
+<ul>
+<li>target:  selector for the inline element into which contents
+             will be loaded.</li>
+
+<li>create:  function that will be called if no target is specified;
+             it must find/create and the inline element to be used
+             and then return it.</li>
+
+<li>template:  HTML node that will be cloned by the default 'create'
+               function to produce the inline element.</li>
+
+<li>success:  callback executed whenever content is successfully loaded</li>
+
+<li>error:  callback executed whenever content loading gives an error</li>
+
+<li>setState:  callback executed whenever the state of the inline element
+               changes.  The state name is given as the only argument,
+               and can be one of 'wait', 'success' or 'error'.</li>
+
+<li>finish:  callback executed when content is successfully loaded but
+             contains no further links or forms; basically indicates that
+             no further navigation can be performed within the element.</li>
+</ul>
+
+<p>The default behavior is to create a fresh &lt;div&gt; for each loadInline() element
+and display it as a pop-up.  When no further navigation is possible, or when
+ESC is pressed, the pop-up is automatically closed.</p>
 </body>
 </html>
