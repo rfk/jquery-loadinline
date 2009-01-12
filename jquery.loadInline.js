@@ -191,7 +191,7 @@ $.fn.loadInline.defaults = {
               };
               //  Position the popup over the element that was activated
               target.css("position","absolute");
-              var pos = source.position();
+              var pos = source.offset();
               target.css("top",pos.top).css("left",pos.left);
               target.fadeIn();
               return target;
