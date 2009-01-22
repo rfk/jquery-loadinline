@@ -138,11 +138,7 @@ Inline.prototype.setState = function(state) {
 //
 Inline.prototype.error = function(req,status,err) {
     this.setState("error");
-    if(status) {
-        this.target.html(status);
-    } else if(err) {
-        this.target.html(err);
-    }
+    this.target.html(req.responseText);
     if(this.opts.error) {
         this.opts.error(req,status,err);
     }
