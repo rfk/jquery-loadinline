@@ -27,10 +27,13 @@
 //
 //      target:  selector for the inline element into which contents
 //               will be loaded.
+//
+//      linkSelector:  selector to locate elements within the loaded content
+//                     that should be recursively decorated.
 //  
 //      create:  function that will be called if no target is specified;
-//               it must find/create and the inline element to be used
-//               and then return it.
+//               it must find/create the inline element to be used and
+//               then return it.
 //
 //      template:  HTML node that will be cloned by the default 'create'
 //                 function to produce the inline element.
@@ -79,8 +82,8 @@ $.fn.loadInline = function(options) {
         //  This leverages the awesome ajax form plugin.
         $this.filter("form").ajaxForm({
             beforeSubmit: function() {
-                              inline = new Inline(opts,$this);
-                              return true;
+                            inline = new Inline(opts,$this);
+                            return inline.beforeSubmit.apply(inline,arguments);
                           },
             success: function() {
                          return inline.success.apply(inline,arguments);
@@ -129,9 +132,7 @@ function Inline(opts,source,event) {
 //  Conditionally pass on calls to setState()
 //
 Inline.prototype.setState = function(state) {
-    if(this.opts.setState) {
-        this.opts.setState(state);
-    }
+    this.opts.setState(state);
 }
 
 //  Display an error in the inline object.
@@ -139,9 +140,8 @@ Inline.prototype.setState = function(state) {
 Inline.prototype.error = function(req,status,err) {
     this.setState("error");
     this.target.html(req.responseText);
-    if(this.opts.error) {
-        this.opts.error(req,status,err);
-    }
+    this.opts.error(req,status,err);
+    $(this.opts.linkSelector,this.target).loadInline(this.opts);
 }
 
 //  Show some loaded content in an inline object.
@@ -149,13 +149,17 @@ Inline.prototype.error = function(req,status,err) {
 Inline.prototype.success = function(data) {
     this.setState("success");
     this.target.html(data);
-    if(this.opts.success) {
-        this.opts.success(data);
-    }
-    var links = $("a, form",this.target).loadInline(this.opts);
+    this.opts.success(data);
+    var links = $(this.opts.linkSelector,this.target).loadInline(this.opts);
     if(links.length == 0) {
         this.opts.finish();
     }
+}
+
+//  Run beforeSuccess callback for form submission
+//
+Inline.prototype.beforeSubmit = function() {
+    return this.opts.beforeSubmit();
 }
 
 //  Default options for loadInline.
@@ -165,8 +169,9 @@ Inline.prototype.success = function(data) {
 //
 $.fn.loadInline.defaults = {
   target: undefined,
-  success: undefined,
-  error: undefined,
+  linkSelector: "a, form",
+  success: function(){},
+  error: function(){},
   template: $("<div class='load-inline-display' style='display: none'></div>"),
   create: function(source) {
               var target = $(this.template).clone().appendTo("body");
@@ -203,7 +208,8 @@ $.fn.loadInline.defaults = {
                 this.target.removeClass("wait");
                 this.target.removeClass("success");
                 this.target.addClass(state);
-            }
+            },
+  beforeSubmit: function() { return true; }
 };
 
 })(jQuery);
