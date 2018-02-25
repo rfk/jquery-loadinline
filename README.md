@@ -1,6 +1,16 @@
 
+Status: Unmaintained
+====================
 
-  jquery.loadInline: have links and forms load content inline via ajax
+
+[![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)
+
+I am [no longer actively maintaining this project](https://rfk.id.au/blog/entry/archiving-open-source-projects/).
+
+
+
+jquery.loadInline: have links and forms load content inline via ajax
+====================================================================
 
 
 This jQuery plugin causes links to display their contents within an
